@@ -1,6 +1,6 @@
 # sprite classes for game
+# Using Code from Kids Can Code 
 # i used some ideas from CodePylet https://www.youtube.com/watch?v=osDofIdja6s&t=1038s
-# i also borrowed pretty much all of this from kids can code - thanks!
 # on acceleration https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/v/average-velocity-for-constant-acceleration 
 # on vectors: https://www.youtube.com/watch?v=ml4NSzCQobk 
 
@@ -23,28 +23,26 @@ class Spritesheet:
         return image
 class Player(Sprite):
     def __init__(self, game):
-        # allows layering in LayeredUpdates sprite group - thanks pygame!
+        # allows layering in LayeredUpdates sprite group
         self._layer = PLAYER_LAYER
         # add player to game groups when instantiated
         self.groups = game.all_sprites
         Sprite.__init__(self, self.groups)
+        # creates sprite and traits for the bunny 
         self.game = game
         self.walking = False
         self.jumping = False
         self.current_frame = 0
         self.last_update = 0
         self.load_images()
-        # self.image = pg.Surface((30,40))
-        # self.image = self.game.spritesheet.get_image(614,1063,120,191)
         self.image = self.standing_frames[0]
         self.image.set_colorkey(BLACK)
-        # self.image.fill(BLACK)
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT /2)
         self.pos = vec(WIDTH / 2, HEIGHT / 2)
         self.vel = vec(0, 0)
         self.acc = vec(0, 0)
-        print("adding vecs " + str(self.vel + self.acc))
+        # loading images onto the game screen 
     def load_images(self):
         self.standing_frames = [self.game.spritesheet.get_image(690, 406, 120, 201),
                                 self.game.spritesheet.get_image(614, 1063, 120, 191)
@@ -59,14 +57,13 @@ class Player(Sprite):
         for frame in self.walk_frames_r:
             frame.set_colorkey(BLACK)
             self.walk_frames_l.append(pg.transform.flip(frame, True, False))
+        # jump animation 
         self.jump_frame = self.game.spritesheet.get_image(382, 763, 150, 181)
         self.jump_frame.set_colorkey(BLACK)
     def update(self):
         self.animate()
+        # acceleration of the bunny 
         self.acc = vec(0, PLAYER_GRAV)
-        # print("acc " + str(self.acc))
-        # print("vel " + str(self.vel))
-
         keys = pg.key.get_pressed()
         if keys[pg.K_a]:
             self.acc.x =  -PLAYER_ACC
@@ -74,12 +71,12 @@ class Player(Sprite):
             self.acc.x = PLAYER_ACC
         # set player friction
         self.acc.x += self.vel.x * PLAYER_FRICTION
-        # equations of motion
+        # equations for motion
         self.vel += self.acc
         if abs(self.vel.x) < 0.1:
             self.vel.x = 0
         self.pos += self.vel + 0.5 * self.acc
-        # jump to other side of screen
+        # if the player jumps to other side of screen
         if self.pos.x > WIDTH + self.rect.width / 2:
             self.pos.x = 0 - self.rect.width / 2
         if self.pos.x < 0 - self.rect.width / 2:
@@ -92,17 +89,16 @@ class Player(Sprite):
             if self.vel.y < -5:
                 self.vel.y = -5
     def jump(self):
-        print("jump is working")
-        # check pixel below
+        # allows player to jump
         self.rect.y += 2
         hits = pg.sprite.spritecollide(self, self.game.platforms, False)
         # adjust based on checked pixel
         self.rect.y -= 2
-        # only allow jumping if player is on platform
+        # only allows jumping if player is on platform
         if hits and not self.jumping:
             # play sound only when space bar is hit and while not jumping
             self.game.jump_sound[choice([0,1])].play()
-            # tell the program that player is currently jumping
+            # telling the program that player is currently jumping
             self.jumping = True
             self.vel.y = -PLAYER_JUMP
             print(self.acc.y)
@@ -122,7 +118,6 @@ class Player(Sprite):
                 2 + 1 = 3; 3 modulus 3 is zero, setting the animation back to its first frame.
                 If current frame is zero, then:
                 0 + 1 = 1; 1 modulus 3 is 1; 2 modulus 3 is 2; 3 modulus 3 is o
-
                 '''
                 self.current_frame = (self.current_frame + 1) % len(self.walk_frames_l)
                 bottom = self.rect.bottom
@@ -132,7 +127,7 @@ class Player(Sprite):
                     self.image = self.walk_frames_l[self.current_frame]
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
-        # checks state
+        # checks whether player is jumping or walking 
         if not self.jumping and not self.walking:
             # gets current delta time and checks against 200 miliseconds
             if now - self.last_update > 200:
@@ -143,11 +138,10 @@ class Player(Sprite):
                 self.image = self.standing_frames[self.current_frame]
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
-        # collide will find this property if it is called self.mask
         self.mask = pg.mask.from_surface(self.image)
 class Cloud(Sprite):
+    # code for the raondom clouds going at random speeds in the background
     def __init__(self, game):
-        # allows layering in LayeredUpdates sprite group
         self._layer = CLOUD_LAYER
         # add Platforms to game groups when instantiated
         self.groups = game.all_sprites, game.clouds
@@ -157,14 +151,18 @@ class Cloud(Sprite):
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         scale = randrange (50, 101) / 100
+        # randomizing the cloud images 
         self.image = pg.transform.scale(self.image, (int(self.rect.width * scale), 
                                                      int(self.rect.height * scale)))
         self.rect.x = randrange(WIDTH - self.rect.width)
         self.rect.y = randrange(-500, -50)
+        # randomizes speed of the clouds
         self.speed = randrange(1,3)
     def update(self):
         if self.rect.top > HEIGHT * 2: 
             self.kill
+            ''' Mr. cozort added animated clouds and made it so they 
+            restart on the other side of the screen'''
         self.rect.x += self.speed
         if self.rect.x > WIDTH:
             self.rect.x = -self.rect.width
@@ -180,14 +178,16 @@ class Platform(Sprite):
                   self.game.spritesheet.get_image(213, 1662, 201, 100)]
         self.image = random.choice(images)
         self.image.set_colorkey(BLACK)
-        '''leftovers from random rectangles before images'''
-        # self.image = pg.Surface((w,h))
-        # self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.ground_level = False
+        # checking spawn rate of powerups and cacti
         if random.randrange(100) < POW_SPAWN_PCT:
             Pow(self.game, self)
+        if random.randrange(100) < POW_SPAWN_PCT:
+            Cactus(self.game, self)
+        
 class Pow(Sprite):
     def __init__(self, game, plat):
         # allows layering in LayeredUpdates sprite group
@@ -197,8 +197,12 @@ class Pow(Sprite):
         Sprite.__init__(self, self.groups)
         self.game = game
         self.plat = plat
-        self.type = random.choice(['boost'])
-        self.image = self.game.spritesheet.get_image(820, 1805, 71, 70)
+        self.type = random.choice(['boost', 'coin'])
+        if self.type == "boost": 
+
+            self.image = self.game.spritesheet.get_image(820, 1805, 71, 70)
+        else: 
+            self.image = self.game.spritesheet.get_image(244, 1981, 61, 61)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.centerx = self.plat.rect.centerx
@@ -208,6 +212,29 @@ class Pow(Sprite):
         # checks to see if plat is in the game's platforms group so we can kill the powerup instance
         if not self.game.platforms.has(self.plat):
             self.kill()
+'''
+# class Coin(Sprite):
+#     def __init__(self, game, plat):
+#         # allows layering in LayeredUpdates sprite group
+#         self._layer = COIN_LAYER
+#         # add a groups property where we can pass all instances of this object into game groups
+#         self.groups = game.all_sprites, game.pointboost
+#         Sprite.__init__(self, self.groups)
+#         self.game = game
+#         self.plat = plat
+#         self.type = random.choice(['coin'])
+#         self.image = self.game.spritesheet.get_image(244, 1981, 61, 61)
+#         self.rect = self.image.get_rect()
+#         self.rect.centerx = self.plat.rect.centerx
+#         self.rect.bottom = self.plat.rect.top - 10
+#     def update(self):
+#         self.rect.bottom = self.plat.rect.top - 10
+#         # checks to see if plat is in the game's platforms group so we can kill the powerup instance
+#         if not self.game.platforms.has(self.plat):
+#             self.kill()
+    code above no longer needed since the coin was made a powerup 
+    sprite was defined in the pow class 
+'''
 class Mob(Sprite):
     def __init__(self, game):
         # allows layering in LayeredUpdates sprite group
@@ -225,6 +252,7 @@ class Mob(Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = choice([-100, WIDTH + 100])
         self.rect_top = self.rect.top
+        # randomizing the mob speed 
         self.vx = randrange(1, 4)
         if self.rect.centerx > WIDTH:
             self.vx *= -1
@@ -232,6 +260,7 @@ class Mob(Sprite):
         self.vy = 0
         self.dy = 0.5
     def update(self):
+        # updating where the player is on screen
         self.rect.x += self.vx
         self.vy += self.dy
         self.rect_top = self.rect.top
@@ -247,5 +276,25 @@ class Mob(Sprite):
         self.rect.center = center
         self.rect_top = self.rect.top
         self.rect.y += self.vy
+        # making sure player dies 
         if self.rect.left > WIDTH + 100 or self.rect.right < -100:
+            self.kill()
+class Cactus(Sprite):
+    def __init__(self, game, plat):
+        # allows layering in LayeredUpdates sprite group
+        self._layer = POW_LAYER
+        # add a groups property where we can pass all instances of this object into game groups
+        self.groups = game.all_sprites, game.cacti
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.plat = plat
+        self.image = self.game.spritesheet.get_image(707,134,117,160)
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = self.plat.rect.centerx
+        self.rect.bottom = self.plat.rect.top - 5
+    def update(self):
+        self.rect.bottom = self.plat.rect.top - 5
+        # checks to see if plat is in the game's platforms group so we can kill the powerup instance
+        if not self.game.platforms.has(self.plat):
             self.kill()
